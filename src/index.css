@@ -110,9 +110,11 @@ a {
 }
 
 .stage .react-pdf__Document {
-  position: relative;
-  width: 100%;
-  display: block;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .stage .page-slot {
   position: absolute;
@@ -121,18 +123,12 @@ a {
   align-items: center;
   justify-content: center;
 }
-.stage .page-slot:first-child {
-  position: relative;
-}
 .stage .react-pdf__Page {
   background: transparent !important;
-  display: flex;
-  justify-content: center;
 }
 .stage .react-pdf__Page__canvas {
-  width: 100vw !important;
   max-width: 100% !important;
-  height: auto !important;
+  max-height: 100% !important;
   display: block;
 }
 
@@ -188,7 +184,13 @@ a {
 }
 
 .loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   color: #aaa;
+  font-size: 1rem;
+  z-index: 4;
 }
 
 .nav {

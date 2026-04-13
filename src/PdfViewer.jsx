@@ -20,10 +20,12 @@ export default function PdfViewer() {
 
   const [numPages, setNumPages] = useState(0)
   const [pageNumber, setPageNumber] = useState(1)
-  const [width, setWidth] = useState(0)
+  const [size, setSize] = useState({ w: 0, h: 0 })
+  const [pageAspect, setPageAspect] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [loadError, setLoadError] = useState(null)
   const [renderedPages, setRenderedPages] = useState(0)
+  const stageRef = useRef(null)
 
   const fileUrl = useMemo(() => {
     const name = decodeURIComponent(filename || '')
@@ -36,17 +38,24 @@ export default function PdfViewer() {
     setNumPages(0)
     setLoadError(null)
     setRenderedPages(0)
+    setPageAspect(null)
   }, [fileUrl])
 
   useEffect(() => {
-    const el = containerRef.current
+    const el = stageRef.current
     if (!el) return
-    const update = () => setWidth(el.clientWidth)
+    const update = () => setSize({ w: el.clientWidth, h: el.clientHeight })
     update()
     const ro = new ResizeObserver(update)
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+
+  const fitWidth = useMemo(() => {
+    if (!size.w || !size.h) return 0
+    if (!pageAspect) return size.w
+    return Math.min(size.w, size.h * pageAspect)
+  }, [size, pageAspect])
 
   useEffect(() => {
     const onFs = () => setIsFullscreen(!!document.fullscreenElement)
@@ -119,7 +128,7 @@ export default function PdfViewer() {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <div className="stage" onClick={onClickArea}>
+      <div className="stage" ref={stageRef} onClick={onClickArea}>
         <div className="overlay-controls" onClick={(e) => e.stopPropagation()}>
           <span className="pager">
             {pageNumber} / {numPages || '…'}
@@ -142,7 +151,7 @@ export default function PdfViewer() {
             options={PDF_OPTIONS}
             className="doc"
           >
-            {width > 0 &&
+            {fitWidth > 0 &&
               numPages > 0 &&
               Array.from({ length: numPages }, (_, i) => i + 1).map((n) => (
                 <div
@@ -153,9 +162,14 @@ export default function PdfViewer() {
                 >
                   <Page
                     pageNumber={n}
-                    width={width}
+                    width={fitWidth}
                     renderAnnotationLayer={false}
                     renderTextLayer={false}
+                    onLoadSuccess={(page) => {
+                      if (n === 1 && page?.width && page?.height) {
+                        setPageAspect(page.width / page.height)
+                      }
+                    }}
                     onRenderSuccess={() => setRenderedPages((c) => c + 1)}
                   />
                 </div>
